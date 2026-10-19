@@ -24,6 +24,21 @@ class BranilistMapperTest {
     }
 
     @Test
+    fun `new entries get a planned status unless chapters were already read`() {
+        assertEquals(BranilistMapper.PLANNING, BranilistMapper.initialStatus(hasReadChapters = false))
+        assertEquals(BranilistMapper.READING, BranilistMapper.initialStatus(hasReadChapters = true))
+        assertEquals(0.0, BranilistMapper.INITIAL_SCORE)
+    }
+
+    @Test
+    fun `reading progress moves planned entries to current`() {
+        assertEquals(BranilistMapper.READING, BranilistMapper.statusAfterProgress(BranilistMapper.PLANNING, 1.0, false))
+        assertEquals(BranilistMapper.READING, BranilistMapper.statusAfterProgress(BranilistMapper.PLANNING, 0.0, true))
+        assertEquals(BranilistMapper.PLANNING, BranilistMapper.statusAfterProgress(BranilistMapper.PLANNING, 0.0, false))
+        assertEquals(BranilistMapper.ON_HOLD, BranilistMapper.statusAfterProgress(BranilistMapper.ON_HOLD, 2.0, true))
+    }
+
+    @Test
     fun `search result preserves Branilist media link and title`() {
         val media = BranilistMedia(
             id = 42,
@@ -39,6 +54,46 @@ class BranilistMapperTest {
         assertEquals("Exemplo", result.title)
         assertEquals("https://branilist.com/manga/42/sample-manga", result.tracking_url)
         assertEquals("https://cdn.branilist.com/cover.jpg", result.cover_url)
+    }
+
+    @Test
+    fun `search result uses native title when localized titles are unavailable`() {
+        val media = BranilistMedia(
+            id = 43,
+            slug = "native-title",
+            type = "MANGA",
+            title = BranilistTitle(native = "原題"),
+        )
+
+        assertEquals("原題", BranilistMapper.toTrackSearch(media, trackerId = 10).title)
+    }
+
+    @Test
+    fun `search result includes English synopsis release date and rating`() {
+        val media = BranilistMedia(
+            id = 44,
+            slug = "metadata-manga",
+            type = "MANGA",
+            description = "Resumo em português",
+            descriptionEnglish = "English synopsis",
+            averageScore = 64,
+            startDate = "2025-01-25T00:00:00Z",
+        )
+
+        val result = BranilistMapper.toTrackSearch(media, trackerId = 10)
+
+        assertEquals("English synopsis", result.summary)
+        assertEquals("2025-01-25", result.start_date)
+        assertEquals(64.0, result.score)
+    }
+
+    @Test
+    fun `tracking dates round trip as UTC calendar dates`() {
+        val startedAt = BranilistMapper.dateFromRemote("2025-01-25T00:00:00Z")
+
+        assertEquals("2025-01-25", BranilistMapper.dateToRemote(startedAt))
+        assertEquals(0L, BranilistMapper.dateFromRemote(null))
+        assertEquals(null, BranilistMapper.dateToRemote(0L))
     }
 }
 // KMK <--

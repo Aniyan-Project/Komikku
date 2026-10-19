@@ -58,14 +58,19 @@ class BranilistApi(
     }
 
     suspend fun search(query: String, trackerId: Long): List<TrackSearch> = withIOContext {
-        val url = "$API_URL/api/v1/search".toUri().buildUpon()
-            .appendQueryParameter("q", query)
-            .appendQueryParameter("limit", "50")
-            .build()
-        with(json) {
-            client.newCall(GET(url.toString())).awaitSuccess().parseAs<BranilistSearchResponse>()
-                .items.filter { it.type == "MANGA" }.map { BranilistMapper.toTrackSearch(it, trackerId) }
+        val body = json.encodeToString(
+            BranilistGraphQLSearchRequest(
+                query = SEARCH_MEDIA_QUERY,
+                variables = BranilistGraphQLSearchVariables(query = query, limit = SEARCH_LIMIT),
+            ),
+        ).toRequestBody(jsonMime)
+        val response = with(json) {
+            client.newCall(POST("$API_URL/graphql", body = body)).awaitSuccess().parseAs<BranilistGraphQLSearchResponse>()
         }
+        response.errors.firstOrNull()?.let { throw IOException("Branilist search failed: ${it.message}") }
+        response.data?.searchMedia.orEmpty()
+            .filter { it.type == "MANGA" }
+            .map { BranilistMapper.toTrackSearch(it, trackerId) }
     }
 
     suspend fun findLibraryEntry(mediaId: Long): BranilistLibraryEntry? = withIOContext {
@@ -81,6 +86,9 @@ class BranilistApi(
             progress = track.last_chapter_read.toInt().coerceAtLeast(0),
             score = track.score.takeIf { it >= 0.5 },
             repeatCount = repeatCount.coerceAtLeast(0),
+            startedAt = BranilistMapper.dateToRemote(track.started_reading_date),
+            completedAt = BranilistMapper.dateToRemote(track.finished_reading_date),
+            isPrivate = track.private,
         )
         val request = Request.Builder()
             .url("$API_URL/api/v1/me/library/${track.remote_id}")
@@ -99,9 +107,21 @@ class BranilistApi(
         const val REDIRECT_URI = "http://127.0.0.1:3000/oauth/callback"
         const val APP_CALLBACK_SCHEME = "komikku-branilist"
         const val APP_CALLBACK_HOST = "branilist-auth"
-        private const val API_URL = "https://api.branilist.com"
+        // Branilist's production API is reverse-proxied on the main domain.
+        private const val API_URL = "https://branilist.com"
         private const val AUTHORIZE_URL = "https://branilist.com/oauth/authorize"
-        private const val TOKEN_URL = "https://api.branilist.com/oauth/token"
+        private const val TOKEN_URL = "$API_URL/oauth/token"
+        private const val SEARCH_LIMIT = 30
+        private const val SEARCH_MEDIA_QUERY = """
+            query BranilistTrackerSearch(${ '$' }query: String!, ${ '$' }limit: Int!) {
+              searchMedia(query: ${ '$' }query, limit: ${ '$' }limit) {
+                id slug type status format
+                title { romaji english native portuguese }
+                description descriptionEnglish coverImage chapters averageScore
+                startDate endDate
+              }
+            }
+        """
 
         fun authUrl(state: String, challenge: String): Uri = AUTHORIZE_URL.toUri().buildUpon()
             .appendQueryParameter("response_type", "code")
@@ -121,5 +141,8 @@ private data class BranilistLibraryUpdate(
     val progress: Int,
     val score: Double?,
     val repeatCount: Int,
+    val startedAt: String?,
+    val completedAt: String?,
+    @kotlinx.serialization.SerialName("private") val isPrivate: Boolean,
 )
 // KMK <--
