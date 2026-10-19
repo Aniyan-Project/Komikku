@@ -30,6 +30,10 @@ class Branilist(id: Long) : BaseTracker(id, "Branilist") {
     private val api by lazy { BranilistApi(client, this) }
     private val loginScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
+    override val supportsReadingDates: Boolean = true
+
+    override val supportsPrivateTracking: Boolean = true
+
     override fun getLogo() = R.drawable.brand_branilist
 
     override fun getStatusList() = listOf(
@@ -61,6 +65,11 @@ class Branilist(id: Long) : BaseTracker(id, "Branilist") {
     override fun displayScore(track: DomainTrack) = DecimalFormat("0.#").format(track.score)
 
     override suspend fun update(track: Track, didReadChapter: Boolean): Track = withIOContext {
+        val previousStatus = track.status
+        track.status = BranilistMapper.statusAfterProgress(track.status, track.last_chapter_read, didReadChapter)
+        if (didReadChapter && previousStatus == BranilistMapper.PLANNING && track.started_reading_date == 0L) {
+            track.started_reading_date = System.currentTimeMillis()
+        }
         val entry = api.findLibraryEntry(track.remote_id)
         api.updateLibrary(track, entry?.repeatCount ?: 0)
     }
@@ -72,9 +81,13 @@ class Branilist(id: Long) : BaseTracker(id, "Branilist") {
             track.status = BranilistMapper.statusFromRemote(entry.status)
             track.last_chapter_read = entry.progress.toDouble()
             track.score = entry.score ?: 0.0
+            track.started_reading_date = BranilistMapper.dateFromRemote(entry.startedAt)
+            track.finished_reading_date = BranilistMapper.dateFromRemote(entry.completedAt)
+            track.private = entry.isPrivate
             track
         } else {
-            if (hasReadChapters) track.status = BranilistMapper.READING
+            track.status = BranilistMapper.initialStatus(hasReadChapters)
+            track.score = BranilistMapper.INITIAL_SCORE
             api.updateLibrary(track, 0)
         }
     }
@@ -87,6 +100,9 @@ class Branilist(id: Long) : BaseTracker(id, "Branilist") {
         track.last_chapter_read = entry.progress.toDouble()
         track.score = entry.score ?: 0.0
         track.total_chapters = entry.media?.chapters?.toLong() ?: track.total_chapters
+        track.started_reading_date = BranilistMapper.dateFromRemote(entry.startedAt)
+        track.finished_reading_date = BranilistMapper.dateFromRemote(entry.completedAt)
+        track.private = entry.isPrivate
         track
     }
 
@@ -108,36 +124,46 @@ class Branilist(id: Long) : BaseTracker(id, "Branilist") {
         val server = withContext(Dispatchers.IO) { BranilistOAuthCallbackServer.open() }
         trackPreferences.branilistPendingOAuth().set(json.encodeToString(PendingOAuth.serializer(), PendingOAuth(state, verifier)))
         loginScope.launch {
+            var stage = "waiting_for_callback"
             try {
-                BranilistOAuthCallbackServer.awaitAuthorization(server, ::completeLogin)
+                BranilistOAuthCallbackServer.awaitAuthorization(server) { callbackState, code ->
+                    stage = "validating_callback"
+                    completeLogin(callbackState, code) { nextStage -> stage = nextStage }
+                }
             } catch (error: SocketTimeoutException) {
                 clearPendingLogin(state)
-                xLogE("Branilist OAuth callback timed out", error)
+                xLogE("Branilist OAuth failed at $stage: ${error.javaClass.simpleName}", error)
             } catch (error: Exception) {
                 clearPendingLogin(state)
-                xLogE("Branilist OAuth callback or token exchange failed", error)
+                xLogE("Branilist OAuth failed at $stage: ${error.javaClass.simpleName}: ${error.message.orEmpty().take(200)}", error)
             }
         }
         return BranilistApi.authUrl(state, challenge).toString()
     }
 
-    suspend fun completeLogin(state: String?, code: String?) {
+    suspend fun completeLogin(state: String?, code: String?, onStage: (String) -> Unit = {}) {
+        onStage("checking_pending_request")
         val pending = runCatching {
             json.decodeFromString(PendingOAuth.serializer(), trackPreferences.branilistPendingOAuth().get())
-        }.getOrNull() ?: throw IllegalArgumentException("OAuth login request expired")
-        require(!state.isNullOrBlank() && pending.state == state) { "OAuth state validation failed" }
+        }.getOrNull() ?: throw IllegalStateException("pending_request_missing_or_expired")
+        if (state.isNullOrBlank()) throw IllegalStateException("callback_state_missing")
+        if (pending.state != state) throw IllegalStateException("callback_state_mismatch")
+        if (code.isNullOrBlank()) throw IllegalStateException("authorization_code_missing")
+
+        onStage("exchanging_authorization_code")
         trackPreferences.branilistPendingOAuth().delete()
         val verifier = pending.verifier
-        require(!code.isNullOrBlank()) { "Branilist authorization was cancelled" }
         val oauth = api.exchangeCode(code, verifier)
         saveOAuth(oauth)
         try {
+            onStage("loading_user_profile")
             val user = api.currentUser()
             saveCredentials(user.username, user.id.toString())
         } catch (error: Throwable) {
             logout()
             throw error
         }
+        onStage("login_complete")
     }
 
     fun saveOAuth(oauth: BranilistOAuth) {

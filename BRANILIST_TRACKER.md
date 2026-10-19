@@ -18,13 +18,19 @@ Komikku starts a loopback-only listener on port 3000, receives Branilist's regis
 
 ## Supported behavior
 
-- Search Branilist manga and add/link a library entry.
+- Search Branilist manga, including catalog alternative titles, and add/link a library entry. Search uses Branilist's `searchMedia` discovery query rather than the simpler public REST search, which only matches primary title fields.
 - Read the account's library status, progress, score, and repeat count.
-- Update status, progress, and score while preserving the existing repeat count.
+- Edit and sync reading start and completion dates, plus private tracking.
+- Update status, progress, score, dates, and privacy while preserving the existing repeat count.
+- Show English synopsis, release date, and Branilist's average rating in search results.
+- New entries start as `PLANNING` with a local score of `0`; adding read progress to a planned entry moves it to `CURRENT`.
 - Refresh access tokens using Branilist's rotating refresh-token flow.
 - Translate Branilist statuses to Komikku's shared tracker status values.
+- Use Branilist's official mark from `media.branilist.com` for the tracker icon.
 
 Branilist's current public API has no library-entry delete endpoint, so unlinking/removing a remote entry is not offered by this tracker. The API exposes a maximum of 500 library entries per response; lookup uses that endpoint as provided.
+
+Date and privacy support requires the Branilist API migration `000144_private_library_entries`. Private entries remain available to their owner, but are excluded from public lists, activity feed, public statistics, and social recommendation signals.
 
 ## Build and validate
 
@@ -44,10 +50,15 @@ Manual end-to-end check:
 1. Install the debug APK and open Settings → Tracking → Branilist.
 2. Log in and approve the three requested scopes.
 3. Search for a Branilist manga, add it to tracking, and verify it appears in the Branilist library.
-4. Change progress, status, and score in Komikku; confirm each update on Branilist.
-5. Confirm an existing repeat count remains unchanged after an update.
-6. Refresh the tracker entry and verify the values return from Branilist.
-7. Log out, log in again, and verify refresh-token rotation continues to work.
+4. Search for a manga using one of its alternative titles and confirm the result is found.
+5. Add an untracked manga; verify it starts as **Planejo ler** with score `0`.
+6. Add read progress to a planned manga; verify its status changes to **Acompanhando** on Branilist.
+7. Set reading start and completion dates, sync, refresh, and verify both dates persist.
+8. Mark a tracked item private; confirm the private icon is enabled after refresh and the item is absent from the public Branilist list/feed. Turn privacy off and confirm public visibility returns.
+9. Change progress, status, and score in Komikku; confirm each update on Branilist.
+10. Confirm an existing repeat count remains unchanged after an update.
+11. Check search results show English synopsis, release date, and average rating where Branilist has them.
+12. Log out, log in again, and verify refresh-token rotation continues to work.
 
 If Branilist shows an invalid OAuth request, check the API log for `GET /api/oauth/authorize/preview`. A 400 confirms the request was rejected before consent and before the device callback; current API access logs do not report which individual validation failed.
 
