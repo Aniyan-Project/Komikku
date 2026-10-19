@@ -96,7 +96,7 @@ class BranilistApi(
 
     companion object {
         const val CLIENT_ID = "brn_y1Z-brIeBkc0zmtCDEIWjulH"
-        const val REDIRECT_URI = "http://localhost:3000/oauth/callback"
+        const val REDIRECT_URI = "http://127.0.0.1:3000/oauth/callback"
         const val APP_CALLBACK_SCHEME = "komikku-branilist"
         const val APP_CALLBACK_HOST = "branilist-auth"
         private const val API_URL = "https://api.branilist.com"
