@@ -14,7 +14,7 @@ The `127.0.0.1` callback is served by Komikku on the Android device. HTTP is req
 
 The login request asks for `profile:read`, `library:read`, and `library:write`. Grant those scopes to the app in Branilist. The app's public client ID is embedded in the APK; it is not a secret.
 
-Komikku starts a loopback-only listener on port 3000, receives Branilist's registered redirect, then forwards the authorization response to the app's private URI scheme. The PKCE verifier is stored in private preferences and the returned `state` is checked before exchanging the authorization code.
+Komikku starts a loopback-only listener on port 3000, receives Branilist's registered redirect, validates `state`, and exchanges the authorization code with PKCE before returning to the app. The code and tokens are not placed in the app's private URI scheme. The PKCE verifier is stored in private preferences.
 
 ## Supported behavior
 

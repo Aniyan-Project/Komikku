@@ -3,6 +3,7 @@ package eu.kanade.tachiyomi.ui.setting.track
 import android.net.Uri
 import androidx.lifecycle.lifecycleScope
 import eu.kanade.tachiyomi.util.system.toast
+import exh.log.xLogE
 import kotlinx.coroutines.launch
 import tachiyomi.i18n.kmk.KMR
 
@@ -31,14 +32,14 @@ class TrackLoginActivity : BaseOAuthLoginActivity() {
                     "shikimori-auth" -> handleShikimori(data["code"])
                     // KMK -->
                     "branilist-auth" -> {
-                        if (data["error"] != null) {
-                            throw IllegalStateException("Branilist authorization failed: ${data["error"]}")
+                        if (data["result"] != "complete") {
+                            throw IllegalStateException("Branilist authorization failed: ${data["error"] ?: "invalid_result"}")
                         }
-                        trackerManager.branilist.completeLogin(data["state"], data["code"])
                     }
                     // KMK <--
                 }
             } catch (error: Exception) {
+                xLogE("Branilist OAuth callback failed", error)
                 toast(KMR.strings.branilist_oauth_login_failed)
             } finally {
                 returnToSettings()
