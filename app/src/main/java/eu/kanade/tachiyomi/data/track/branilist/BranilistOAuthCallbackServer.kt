@@ -11,9 +11,9 @@ internal object BranilistOAuthCallbackServer {
     private var activeServer: ServerSocket? = null
 
     @Synchronized
-    fun open(): ServerSocket {
+    fun open(port: Int = CALLBACK_PORT): ServerSocket {
         activeServer?.close()
-        return ServerSocket(3000, 1, InetAddress.getLoopbackAddress()).apply {
+        return ServerSocket(port, 1, InetAddress.getByName(CALLBACK_HOST)).apply {
             soTimeout = 180_000
             activeServer = this
         }
@@ -28,7 +28,7 @@ internal object BranilistOAuthCallbackServer {
                     while (input.readLine()?.isNotEmpty() == true) Unit
 
                     val path = requestLine.split(' ').getOrNull(1).orEmpty()
-                    val uri = runCatching { URI("http://localhost:3000$path") }.getOrNull()
+                    val uri = runCatching { URI("http://$CALLBACK_HOST:$CALLBACK_PORT$path") }.getOrNull()
                     val location = if (uri?.path == "/oauth/callback") {
                         "${BranilistApi.APP_CALLBACK_SCHEME}://${BranilistApi.APP_CALLBACK_HOST}${uri.rawQuery?.let { "?$it" }.orEmpty()}"
                     } else {
@@ -46,5 +46,8 @@ internal object BranilistOAuthCallbackServer {
             }
         }
     }
+
+    private const val CALLBACK_HOST = "127.0.0.1"
+    private const val CALLBACK_PORT = 3000
 }
 // KMK <--

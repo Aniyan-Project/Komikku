@@ -7,10 +7,10 @@ This feature branch adds Branilist as a native manga tracker to the Komikku fork
 The Android client uses public OAuth with PKCE S256. It does not contain a client secret. Configure the Branilist app with this exact redirect URI:
 
 ```text
-http://localhost:3000/oauth/callback
+http://127.0.0.1:3000/oauth/callback
 ```
 
-The `localhost` callback is served by Komikku on the Android device. HTTP is required for this loopback callback; Branilist must have the same URI registered exactly. A server using port 3000 on another machine does not conflict with the Android listener.
+The `127.0.0.1` callback is served by Komikku on the Android device. HTTP is required for this loopback callback; Branilist must have the same URI registered exactly. Update the redirect URI in the Branilist app settings before testing (remove or keep the old `localhost` entry as desired). A server using port 3000 on another machine does not conflict with the Android listener.
 
 The login request asks for `profile:read`, `library:read`, and `library:write`. Grant those scopes to the app in Branilist. The app's public client ID is embedded in the APK; it is not a secret.
 
