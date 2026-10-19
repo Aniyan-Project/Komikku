@@ -5,6 +5,7 @@ import eu.kanade.tachiyomi.R
 import eu.kanade.tachiyomi.data.database.models.Track
 import eu.kanade.tachiyomi.data.track.BaseTracker
 import eu.kanade.tachiyomi.data.track.model.TrackSearch
+import exh.log.xLogE
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.CoroutineScope
@@ -108,11 +109,13 @@ class Branilist(id: Long) : BaseTracker(id, "Branilist") {
         trackPreferences.branilistPendingOAuth().set(json.encodeToString(PendingOAuth.serializer(), PendingOAuth(state, verifier)))
         loginScope.launch {
             try {
-                BranilistOAuthCallbackServer.awaitAuthorization(server)
-            } catch (_: SocketTimeoutException) {
+                BranilistOAuthCallbackServer.awaitAuthorization(server, ::completeLogin)
+            } catch (error: SocketTimeoutException) {
                 clearPendingLogin(state)
-            } catch (_: java.io.IOException) {
+                xLogE("Branilist OAuth callback timed out", error)
+            } catch (error: Exception) {
                 clearPendingLogin(state)
+                xLogE("Branilist OAuth callback or token exchange failed", error)
             }
         }
         return BranilistApi.authUrl(state, challenge).toString()
