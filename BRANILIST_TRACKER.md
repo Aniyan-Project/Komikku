@@ -10,6 +10,8 @@ The Android client uses public OAuth with PKCE S256. It does not contain a clien
 http://localhost:3000/oauth/callback
 ```
 
+The `localhost` callback is served by Komikku on the Android device. HTTP is required for this loopback callback; Branilist must have the same URI registered exactly. A server using port 3000 on another machine does not conflict with the Android listener.
+
 The login request asks for `profile:read`, `library:read`, and `library:write`. Grant those scopes to the app in Branilist. The app's public client ID is embedded in the APK; it is not a secret.
 
 Komikku starts a loopback-only listener on port 3000, receives Branilist's registered redirect, then forwards the authorization response to the app's private URI scheme. The PKCE verifier is stored in private preferences and the returned `state` is checked before exchanging the authorization code.
@@ -35,7 +37,7 @@ Build the separate debug APK with:
 ./gradlew assembleDebug
 ```
 
-The debug build installs as `app.komikku.dev` and displays as **Komikku Branilist (test)**, separate from the production Komikku app. The APK is written to `app/build/outputs/apk/debug/app-debug.apk`.
+The debug build installs as `app.komikku.dev` and displays as **Komikku Branilist (test)**, separate from the production Komikku app. ABI-specific APKs are written to `app/build/outputs/apk/debug/`, including `app-arm64-v8a-debug.apk` for most current Android phones.
 
 Manual end-to-end check:
 
@@ -46,5 +48,7 @@ Manual end-to-end check:
 5. Confirm an existing repeat count remains unchanged after an update.
 6. Refresh the tracker entry and verify the values return from Branilist.
 7. Log out, log in again, and verify refresh-token rotation continues to work.
+
+If Branilist shows an invalid OAuth request, check the API log for `GET /api/oauth/authorize/preview`. A 400 confirms the request was rejected before consent and before the device callback; current API access logs do not report which individual validation failed.
 
 An upstream pull request is intentionally deferred until the APK has been exercised against a real Branilist account and the integration is confirmed working.

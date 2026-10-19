@@ -16,6 +16,7 @@ import kotlinx.serialization.json.Json
 import tachiyomi.core.common.util.lang.withIOContext
 import tachiyomi.i18n.MR
 import uy.kohesive.injekt.injectLazy
+import java.net.SocketTimeoutException
 import java.security.MessageDigest
 import java.security.SecureRandom
 import java.text.DecimalFormat
@@ -105,7 +106,15 @@ class Branilist(id: Long) : BaseTracker(id, "Branilist") {
             .encodeToString(MessageDigest.getInstance("SHA-256").digest(verifier.toByteArray()))
         val server = withContext(Dispatchers.IO) { BranilistOAuthCallbackServer.open() }
         trackPreferences.branilistPendingOAuth().set(json.encodeToString(PendingOAuth.serializer(), PendingOAuth(state, verifier)))
-        loginScope.launch { BranilistOAuthCallbackServer.awaitAuthorization(server) }
+        loginScope.launch {
+            try {
+                BranilistOAuthCallbackServer.awaitAuthorization(server)
+            } catch (_: SocketTimeoutException) {
+                clearPendingLogin(state)
+            } catch (_: java.io.IOException) {
+                clearPendingLogin(state)
+            }
+        }
         return BranilistApi.authUrl(state, challenge).toString()
     }
 
@@ -137,6 +146,13 @@ class Branilist(id: Long) : BaseTracker(id, "Branilist") {
     }.getOrNull()
 
     internal fun apiRefreshToken(oauth: BranilistOAuth): BranilistOAuth = api.refreshToken(oauth).also(::saveOAuth)
+
+    private fun clearPendingLogin(state: String) {
+        val pending = runCatching {
+            json.decodeFromString(PendingOAuth.serializer(), trackPreferences.branilistPendingOAuth().get())
+        }.getOrNull()
+        if (pending?.state == state) trackPreferences.branilistPendingOAuth().delete()
+    }
 
     private fun randomToken(): String = ByteArray(32).also(SecureRandom()::nextBytes)
         .let { Base64.getUrlEncoder().withoutPadding().encodeToString(it) }
