@@ -54,5 +54,6 @@ class TrackPreferences(
 
     // KMK -->
     fun autoSyncProgressFromTrackers() = preferenceStore.getBoolean("pref_auto_sync_progress_from_trackers_key", true)
+    fun branilistPendingOAuth() = preferenceStore.getString(Preference.privateKey("branilist_oauth_pending"), "")
     // KMK <--
 }

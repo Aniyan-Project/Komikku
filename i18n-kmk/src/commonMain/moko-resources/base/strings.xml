@@ -224,6 +224,10 @@
     <string name="discord_status_messing">Messing around with</string>
     <string name="discord_download_button">Read on %s</string>
     <string name="discord_app_description">Komikku - a manga reader app</string>
+    <!-- KMK -->
+    <string name="branilist_oauth_start_failed">Could not start Branilist login. Close other login attempts and try again.</string>
+    <string name="branilist_oauth_login_failed">Branilist login failed. Check your connection and try again.</string>
+    <!-- KMK -->
     <!-- Discord RPC Customization -->
     <string name="pref_category_discord_customization">Discord Customization</string>
     <string name="pref_discord_custom_message">Custom Message</string>

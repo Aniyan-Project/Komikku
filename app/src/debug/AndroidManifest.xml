@@ -1,0 +1,5 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android" xmlns:tools="http://schemas.android.com/tools">
+    <!-- KMK -->
+    <application android:label="Komikku Branilist (test)" tools:replace="android:label" />
+    <!-- KMK -->
+</manifest>
