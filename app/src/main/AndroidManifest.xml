@@ -206,6 +206,14 @@
                 <data android:host="myanimelist-auth" />
                 <data android:host="shikimori-auth" />
             </intent-filter>
+            <!-- KMK -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="komikku-branilist" android:host="branilist-auth" />
+            </intent-filter>
+            <!-- KMK -->
         </activity>
         <activity
             android:name=".ui.setting.track.GoogleDriveLoginActivity"

@@ -2,6 +2,7 @@ package eu.kanade.tachiyomi.data.track
 
 import eu.kanade.tachiyomi.data.track.anilist.Anilist
 import eu.kanade.tachiyomi.data.track.bangumi.Bangumi
+import eu.kanade.tachiyomi.data.track.branilist.Branilist
 import eu.kanade.tachiyomi.data.track.kavita.Kavita
 import eu.kanade.tachiyomi.data.track.kitsu.Kitsu
 import eu.kanade.tachiyomi.data.track.komga.Komga
@@ -18,6 +19,9 @@ class TrackerManager {
         const val ANILIST = 2L
         const val KITSU = 3L
         const val KAVITA = 8L
+        // KMK -->
+        const val BRANILIST = 10L
+        // KMK <--
 
         // SY --> Mangadex from Neko
         const val MDLIST = 60L
@@ -35,9 +39,25 @@ class TrackerManager {
     val mangaUpdates = MangaUpdates(7L)
     val kavita = Kavita(KAVITA)
     val suwayomi = Suwayomi(9L)
+    // KMK -->
+    val branilist = Branilist(BRANILIST)
+    // KMK <--
 
-    val trackers =
-        listOf(mdList, myAnimeList, aniList, kitsu, shikimori, bangumi, komga, mangaUpdates, kavita, suwayomi)
+    val trackers = listOf(
+        mdList,
+        myAnimeList,
+        aniList,
+        kitsu,
+        shikimori,
+        bangumi,
+        komga,
+        mangaUpdates,
+        kavita,
+        suwayomi,
+        // KMK -->
+        branilist,
+        // KMK <--
+    )
 
     fun loggedInTrackers() = trackers.filter { it.isLoggedIn }
 

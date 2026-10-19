@@ -1,25 +1,21 @@
-# Branilist tracker integration
+# Branilist tracker integration plan
 
-## Current architecture
+The native Branilist tracker is implemented on `feature/branilist-tracker` in the Komikku fork. The scope and validation notes are in [BRANILIST_TRACKER.md](BRANILIST_TRACKER.md).
 
-Komikku trackers implement `Tracker` and normally extend `BaseTracker`. `TrackerManager` owns each instance, settings expose tracker login controls, and `TrackLoginActivity` handles OAuth browser callbacks. A tracker maps the shared `Track` model to a service's media, library status, progress, score, search, and refresh operations.
+## Completed in this branch
 
-## Branilist API contract confirmed in the Branilist repository
+- Added Branilist search, account/library reads, and library updates.
+- Added OAuth authorization code flow with PKCE, local callback forwarding, `state` verification, secure token storage, and refresh-token rotation.
+- Added tracker settings, callback routing, icon, and debug app label.
+- Added mapper tests and end-to-end validation steps.
+- Built debug APK variants; the arm64 APK is `app/build/outputs/apk/debug/app-arm64-v8a-debug.apk`.
 
-- Public endpoints: `GET /api/v1/search?q=...` and `GET /api/v1/media/:id`.
-- User endpoints: `GET /api/v1/me`, `GET /api/v1/me/library`, and `PUT /api/v1/me/library/:mediaId`.
-- OAuth: authorization code with PKCE S256, token endpoint `POST /oauth/token`, rotating refresh tokens, and no client secret in a public Android app.
-- Documented scopes include `profile:read`, `library:read`, and `library:write`.
-- Base API host in the Branilist TypeScript SDK: `https://api.branilist.com`.
+## Validation and remaining work
 
-## Planned implementation
-
-1. Register a Branilist public OAuth client for the fork and obtain its `client_id` and exact redirect URI. Keep the PKCE verifier and rotating refresh token in private app preferences.
-2. Add a Branilist `Tracker` implementation and API/DTO layer for public media search, current user, library lookup, and library updates. Map Branilist statuses and score/progress semantics explicitly.
-3. Add the Branilist service to `TrackerManager`, settings login/logout, OAuth callback routing, and tracker status presentation.
-4. Give the fork a distinct application ID and display name, disable Komikku's upstream update checker and telemetry destinations, and make a separate test APK.
-5. Add API/mapper tests, document account setup and end-to-end validation, then build and test the test variant before considering any upstream contribution.
-
-## Current blocker
-
-Implementation of a real OAuth login cannot be completed or validated until the Branilist OAuth application is registered and its public `client_id` and redirect URI are known. Never put a client secret in this Android app. No upstream pull request will be opened before the integration is tested and explicitly approved.
+- `spotlessApply`: passed.
+- `spotlessCheck`: passed.
+- Branilist mapper unit tests: passed.
+- `assembleDebug`: passed. D8 emits repetitive Kotlin metadata compatibility warnings from dependencies in this environment; dexing and packaging completed.
+- Full `:app:testDebugUnitTest`: one existing `ScreenSerializationTest` fails with `UnsupportedClassVersionError` under the installed Java 17. All three Branilist mapper tests passed. Retrying with Android Studio's bundled Java 25 did not finish within this run.
+- Install the arm64 APK and test OAuth, search, linking, progress/status/score updates, refresh-token rotation, and repeat-count preservation with the registered Branilist account.
+- Do not open an upstream pull request until real account validation is complete and the user explicitly approves it.
