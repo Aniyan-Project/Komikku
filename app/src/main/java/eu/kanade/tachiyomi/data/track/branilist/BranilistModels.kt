@@ -149,10 +149,10 @@ internal object BranilistMapper {
 
     fun toTrackSearch(media: BranilistMedia, trackerId: Long): TrackSearch = TrackSearch.create(trackerId).apply {
         remote_id = media.id
-        title = media.title.portuguese?.takeIf(String::isNotBlank)
+        title = media.title.romaji?.takeIf(String::isNotBlank)
             ?: media.title.english?.takeIf(String::isNotBlank)
-            ?: media.title.native?.takeIf(String::isNotBlank)
-            ?: media.title.romaji.orEmpty()
+            ?: media.title.portuguese?.takeIf(String::isNotBlank)
+            ?: media.title.native.orEmpty()
         tracking_url = "https://branilist.com/manga/${media.id}/${media.slug}"
         cover_url = media.coverImage.orEmpty()
         summary = media.descriptionEnglish?.takeIf(String::isNotBlank) ?: media.description.orEmpty()
