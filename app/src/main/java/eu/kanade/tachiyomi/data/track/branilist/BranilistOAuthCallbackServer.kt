@@ -37,7 +37,10 @@ internal object BranilistOAuthCallbackServer {
                 it.accept().use { socket ->
                     val input = socket.getInputStream().bufferedReader()
                     val requestLine = input.readLine().orEmpty()
-                    while (input.readLine()?.isNotEmpty() == true) Unit
+                    var header = input.readLine()
+                    while (!header.isNullOrEmpty()) {
+                        header = input.readLine()
+                    }
 
                     val path = requestLine.split(' ').getOrNull(1).orEmpty()
                     val callback = parseCallbackTarget(path)

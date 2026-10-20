@@ -24,24 +24,27 @@ class TrackLoginActivity : BaseOAuthLoginActivity() {
             .orEmpty()
 
         lifecycleScope.launch {
-            try {
-                when (uri.host) {
-                    "anilist-auth" -> handleAniList(data["access_token"])
-                    "bangumi-auth" -> handleBangumi(data["code"])
-                    "myanimelist-auth" -> handleMyAnimeList(data["code"])
-                    "shikimori-auth" -> handleShikimori(data["code"])
-                    // KMK -->
-                    "branilist-auth" -> {
+            when (uri.host) {
+                "anilist-auth" -> handleAniList(data["access_token"])
+                "bangumi-auth" -> handleBangumi(data["code"])
+                "myanimelist-auth" -> handleMyAnimeList(data["code"])
+                "shikimori-auth" -> handleShikimori(data["code"])
+                // KMK -->
+                "branilist-auth" -> {
+                    try {
                         if (data["result"] != "complete") {
                             throw IllegalStateException("Branilist authorization failed: ${data["error"] ?: "invalid_result"}")
                         }
+                    } catch (error: Exception) {
+                        xLogE("Branilist OAuth callback failed", error)
+                        toast(KMR.strings.branilist_oauth_login_failed)
+                    } finally {
+                        returnToSettings()
                     }
-                    // KMK <--
                 }
-            } catch (error: Exception) {
-                xLogE("Branilist OAuth callback failed", error)
-                toast(KMR.strings.branilist_oauth_login_failed)
-            } finally {
+                // KMK <--
+            }
+            if (uri.host != "branilist-auth") {
                 returnToSettings()
             }
         }

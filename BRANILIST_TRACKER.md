@@ -28,7 +28,7 @@ Komikku starts a loopback-only listener on port 3000, receives Branilist's regis
 - Translate Branilist statuses to Komikku's shared tracker status values.
 - Use Branilist's official mark from `media.branilist.com` for the tracker icon.
 
-Branilist's current public API has no library-entry delete endpoint, so unlinking/removing a remote entry is not offered by this tracker. The API exposes a maximum of 500 library entries per response; lookup uses that endpoint as provided.
+The tracker can remove a Branilist library entry through the authenticated `removeMediaEntry` GraphQL mutation. The API exposes a maximum of 500 library entries per response; lookup uses that endpoint as provided.
 
 Date and privacy support requires the Branilist API migration `000144_private_library_entries`. Private entries remain available to their owner, but are excluded from public lists, activity feed, public statistics, and social recommendation signals.
 
@@ -43,7 +43,7 @@ Build the separate debug APK with:
 ./gradlew assembleDebug
 ```
 
-The debug build installs as `app.komikku.dev` and displays as **Komikku Branilist (test)**, separate from the production Komikku app. ABI-specific APKs are written to `app/build/outputs/apk/debug/`, including `app-arm64-v8a-debug.apk` for most current Android phones.
+The debug build installs as `app.komikku.dev`, separate from the production Komikku app. ABI-specific APKs are written to `app/build/outputs/apk/debug/`, including `app-arm64-v8a-debug.apk` for most current Android phones.
 
 Manual end-to-end check:
 
