@@ -55,6 +55,24 @@ data class BranilistGraphQLSearchResponse(
 data class BranilistGraphQLSearchData(val searchMedia: List<BranilistMedia> = emptyList())
 
 @Serializable
+data class BranilistGraphQLRemoveRequest(
+    val query: String,
+    val variables: BranilistGraphQLRemoveVariables,
+)
+
+@Serializable
+data class BranilistGraphQLRemoveVariables(val mediaId: String)
+
+@Serializable
+data class BranilistGraphQLRemoveResponse(
+    val data: BranilistGraphQLRemoveData? = null,
+    val errors: List<BranilistGraphQLError> = emptyList(),
+)
+
+@Serializable
+data class BranilistGraphQLRemoveData(val removeMediaEntry: Boolean? = null)
+
+@Serializable
 data class BranilistGraphQLError(val message: String)
 
 @Serializable

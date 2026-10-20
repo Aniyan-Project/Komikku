@@ -4,6 +4,7 @@ import dev.icerock.moko.resources.StringResource
 import eu.kanade.tachiyomi.R
 import eu.kanade.tachiyomi.data.database.models.Track
 import eu.kanade.tachiyomi.data.track.BaseTracker
+import eu.kanade.tachiyomi.data.track.DeletableTracker
 import eu.kanade.tachiyomi.data.track.model.TrackSearch
 import exh.log.xLogE
 import kotlinx.collections.immutable.ImmutableList
@@ -25,7 +26,7 @@ import java.util.Base64
 import tachiyomi.domain.track.model.Track as DomainTrack
 
 // KMK -->
-class Branilist(id: Long) : BaseTracker(id, "Branilist") {
+class Branilist(id: Long) : BaseTracker(id, "Branilist"), DeletableTracker {
     private val json: Json by injectLazy()
     private val api by lazy { BranilistApi(client, this) }
     private val loginScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
@@ -74,17 +75,24 @@ class Branilist(id: Long) : BaseTracker(id, "Branilist") {
         api.updateLibrary(track, entry?.repeatCount ?: 0)
     }
 
+    override suspend fun delete(track: DomainTrack) {
+        api.deleteLibraryEntry(track.remoteId)
+    }
+
     override suspend fun bind(track: Track, hasReadChapters: Boolean): Track {
         val entry = api.findLibraryEntry(track.remote_id)
         return if (entry != null) {
+            // The search dialog sets this from the public/private tracking button.
+            // Keep that explicit choice when the media already exists in Branilist.
+            val requestedPrivacy = track.private
             track.library_id = entry.mediaId
             track.status = BranilistMapper.statusFromRemote(entry.status)
             track.last_chapter_read = entry.progress.toDouble()
             track.score = entry.score ?: 0.0
             track.started_reading_date = BranilistMapper.dateFromRemote(entry.startedAt)
             track.finished_reading_date = BranilistMapper.dateFromRemote(entry.completedAt)
-            track.private = entry.isPrivate
-            track
+            track.private = requestedPrivacy
+            api.updateLibrary(track, entry.repeatCount)
         } else {
             track.status = BranilistMapper.initialStatus(hasReadChapters)
             track.score = BranilistMapper.INITIAL_SCORE

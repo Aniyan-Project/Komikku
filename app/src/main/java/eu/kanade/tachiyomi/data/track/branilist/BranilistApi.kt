@@ -80,6 +80,23 @@ class BranilistApi(
         }
     }
 
+    suspend fun deleteLibraryEntry(mediaId: Long) = withIOContext {
+        val requestBody = json.encodeToString(
+            BranilistGraphQLRemoveRequest(
+                query = "mutation RemoveMediaEntry(${ '$' }mediaId: ID!) { removeMediaEntry(mediaId: ${ '$' }mediaId) }",
+                variables = BranilistGraphQLRemoveVariables(mediaId.toString()),
+            ),
+        ).toRequestBody(jsonMime)
+        val response = with(json) {
+            authClient.newCall(POST("$API_URL/graphql", body = requestBody))
+                .awaitSuccess().parseAs<BranilistGraphQLRemoveResponse>()
+        }
+        response.errors.firstOrNull()?.let { throw IOException("Branilist library removal failed: ${it.message}") }
+        if (response.data?.removeMediaEntry != true) {
+            throw IOException("Branilist did not remove the library entry")
+        }
+    }
+
     suspend fun updateLibrary(track: Track, repeatCount: Int): Track = withIOContext {
         val update = BranilistLibraryUpdate(
             status = BranilistMapper.statusToRemote(track.status),
