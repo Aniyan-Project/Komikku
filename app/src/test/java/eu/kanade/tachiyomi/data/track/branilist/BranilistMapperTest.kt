@@ -39,21 +39,45 @@ class BranilistMapperTest {
     }
 
     @Test
-    fun `search result preserves Branilist media link and title`() {
+    fun `search result prefers romaji title and preserves Branilist media link`() {
         val media = BranilistMedia(
             id = 42,
             slug = "sample-manga",
             type = "MANGA",
-            title = BranilistTitle(romaji = "Sample", portuguese = "Exemplo"),
+            title = BranilistTitle(romaji = "Romanji", english = "English", portuguese = "Exemplo", native = "原題"),
             coverImage = "https://cdn.branilist.com/cover.jpg",
         )
 
         val result = BranilistMapper.toTrackSearch(media, trackerId = 10)
 
         assertEquals(42, result.remote_id)
-        assertEquals("Exemplo", result.title)
+        assertEquals("Romanji", result.title)
         assertEquals("https://branilist.com/manga/42/sample-manga", result.tracking_url)
         assertEquals("https://cdn.branilist.com/cover.jpg", result.cover_url)
+    }
+
+    @Test
+    fun `search result falls back to English before Portuguese title`() {
+        val media = BranilistMedia(
+            id = 45,
+            slug = "romaji-fallback",
+            type = "MANGA",
+            title = BranilistTitle(english = "English", portuguese = "Exemplo", native = "原題"),
+        )
+
+        assertEquals("English", BranilistMapper.toTrackSearch(media, trackerId = 10).title)
+    }
+
+    @Test
+    fun `search result falls back to Portuguese before native title`() {
+        val media = BranilistMedia(
+            id = 46,
+            slug = "Portuguese-fallback",
+            type = "MANGA",
+            title = BranilistTitle(portuguese = "Exemplo", native = "原題"),
+        )
+
+        assertEquals("Exemplo", BranilistMapper.toTrackSearch(media, trackerId = 10).title)
     }
 
     @Test
