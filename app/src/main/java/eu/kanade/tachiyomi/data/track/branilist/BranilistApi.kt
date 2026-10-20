@@ -21,7 +21,7 @@ import uy.kohesive.injekt.injectLazy
 import java.io.IOException
 
 // KMK -->
-class BranilistApi(
+internal class BranilistApi(
     private val client: OkHttpClient,
     private val tracker: Branilist,
 ) {
@@ -49,7 +49,7 @@ class BranilistApi(
             .build()
         return client.newCall(POST(TOKEN_URL, body = body)).execute().use { response ->
             if (!response.isSuccessful) throw IOException("Branilist token refresh failed (${response.code})")
-            json.decodeFromString(BranilistOAuth.serializer(), response.body!!.string()).withExpiry()
+            json.decodeFromString(BranilistOAuth.serializer(), response.body.string()).withExpiry()
         }
     }
 

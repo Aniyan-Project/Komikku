@@ -9,7 +9,7 @@ import java.time.ZoneOffset
 
 // KMK -->
 @Serializable
-data class BranilistTitle(
+internal data class BranilistTitle(
     val romaji: String? = null,
     val english: String? = null,
     val native: String? = null,
@@ -17,7 +17,7 @@ data class BranilistTitle(
 )
 
 @Serializable
-data class BranilistMedia(
+internal data class BranilistMedia(
     val id: Long,
     val slug: String,
     val type: String,
@@ -34,49 +34,46 @@ data class BranilistMedia(
 )
 
 @Serializable
-data class BranilistSearchResponse(val items: List<BranilistMedia> = emptyList())
-
-@Serializable
-data class BranilistGraphQLSearchRequest(
+internal data class BranilistGraphQLSearchRequest(
     val query: String,
     val variables: BranilistGraphQLSearchVariables,
 )
 
 @Serializable
-data class BranilistGraphQLSearchVariables(val query: String, val limit: Int)
+internal data class BranilistGraphQLSearchVariables(val query: String, val limit: Int)
 
 @Serializable
-data class BranilistGraphQLSearchResponse(
+internal data class BranilistGraphQLSearchResponse(
     val data: BranilistGraphQLSearchData? = null,
     val errors: List<BranilistGraphQLError> = emptyList(),
 )
 
 @Serializable
-data class BranilistGraphQLSearchData(val searchMedia: List<BranilistMedia> = emptyList())
+internal data class BranilistGraphQLSearchData(val searchMedia: List<BranilistMedia> = emptyList())
 
 @Serializable
-data class BranilistGraphQLRemoveRequest(
+internal data class BranilistGraphQLRemoveRequest(
     val query: String,
     val variables: BranilistGraphQLRemoveVariables,
 )
 
 @Serializable
-data class BranilistGraphQLRemoveVariables(val mediaId: String)
+internal data class BranilistGraphQLRemoveVariables(val mediaId: String)
 
 @Serializable
-data class BranilistGraphQLRemoveResponse(
+internal data class BranilistGraphQLRemoveResponse(
     val data: BranilistGraphQLRemoveData? = null,
     val errors: List<BranilistGraphQLError> = emptyList(),
 )
 
 @Serializable
-data class BranilistGraphQLRemoveData(val removeMediaEntry: Boolean? = null)
+internal data class BranilistGraphQLRemoveData(val removeMediaEntry: Boolean? = null)
 
 @Serializable
-data class BranilistGraphQLError(val message: String)
+internal data class BranilistGraphQLError(val message: String)
 
 @Serializable
-data class BranilistLibraryEntry(
+internal data class BranilistLibraryEntry(
     val mediaId: Long,
     val status: String,
     val progress: Int = 0,
@@ -89,16 +86,16 @@ data class BranilistLibraryEntry(
 )
 
 @Serializable
-data class BranilistLibraryResponse(val items: List<BranilistLibraryEntry> = emptyList())
+internal data class BranilistLibraryResponse(val items: List<BranilistLibraryEntry> = emptyList())
 
 @Serializable
-data class BranilistUser(
+internal data class BranilistUser(
     val id: Long,
     val username: String,
 )
 
 @Serializable
-data class BranilistOAuth(
+internal data class BranilistOAuth(
     @SerialName("access_token") val accessToken: String,
     @SerialName("refresh_token") val refreshToken: String,
     @SerialName("token_type") val tokenType: String = "Bearer",

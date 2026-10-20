@@ -149,7 +149,7 @@ class Branilist(id: Long) : BaseTracker(id, "Branilist"), DeletableTracker {
         return BranilistApi.authUrl(state, challenge).toString()
     }
 
-    suspend fun completeLogin(state: String?, code: String?, onStage: (String) -> Unit = {}) {
+    private suspend fun completeLogin(state: String?, code: String?, onStage: (String) -> Unit = {}) {
         onStage("checking_pending_request")
         val pending = runCatching {
             json.decodeFromString(PendingOAuth.serializer(), trackPreferences.branilistPendingOAuth().get())
@@ -174,11 +174,11 @@ class Branilist(id: Long) : BaseTracker(id, "Branilist"), DeletableTracker {
         onStage("login_complete")
     }
 
-    fun saveOAuth(oauth: BranilistOAuth) {
+    internal fun saveOAuth(oauth: BranilistOAuth) {
         trackPreferences.trackToken(this).set(json.encodeToString(BranilistOAuth.serializer(), oauth))
     }
 
-    fun loadOAuth(): BranilistOAuth? = runCatching {
+    internal fun loadOAuth(): BranilistOAuth? = runCatching {
         json.decodeFromString(BranilistOAuth.serializer(), trackPreferences.trackToken(this).get())
     }.getOrNull()
 
